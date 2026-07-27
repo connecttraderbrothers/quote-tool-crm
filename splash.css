@@ -1,0 +1,213 @@
+/* Splash Screen Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #000;
+    overflow: hidden;
+}
+
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.splash-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.logo-wrapper {
+    margin-bottom: 30px;
+    animation: logoFloat 2s ease-in-out infinite;
+    position: relative;
+    z-index: 3;
+}
+
+@keyframes logoFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.splash-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(251, 191, 36, 0.5);
+}
+
+.company-name {
+    font-size: 48px;
+    font-weight: bold;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+    animation: slideIn 0.8s ease-out, shine 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.8));
+    z-index: 3;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shine {
+    0%, 100% {
+        filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.8)) brightness(1);
+    }
+    50% {
+        filter: drop-shadow(0 0 30px rgba(251, 191, 36, 1)) brightness(1.2);
+    }
+}
+
+.tagline {
+    font-size: 16px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 50px;
+    animation: slideIn 1s ease-out;
+    filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.6));
+    z-index: 3;
+}
+
+.loading-bar {
+    width: 250px;
+    height: 4px;
+    background: rgba(251, 191, 36, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    z-index: 3;
+}
+
+.loading-progress {
+    height: 100%;
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    border-radius: 2px;
+    animation: loading 3s ease-in-out forwards;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+}
+
+@keyframes loading {
+    from {
+        width: 0%;
+    }
+    to {
+        width: 100%;
+    }
+}
+
+.enter-button {
+    margin-top: 30px;
+    padding: 15px 40px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    opacity: 0;
+    animation: fadeInButton 1s ease-in 3s forwards;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+    z-index: 3;
+    letter-spacing: 1px;
+}
+
+.enter-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.8);
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+.enter-button:active {
+    transform: scale(0.98);
+}
+
+@keyframes fadeInButton {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-out {
+    animation: fadeOut 0.8s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .splash-logo {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .company-name {
+        font-size: 36px;
+    }
+    
+    .tagline {
+        font-size: 14px;
+    }
+    
+    .loading-bar {
+        width: 200px;
+    }
+
+    .enter-button {
+        font-size: 14px;
+        padding: 12px 30px;
+    }
+}
