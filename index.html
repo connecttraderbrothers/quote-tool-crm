@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMEGA - Professional Business Tools</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://github.com/connecttraderbrothers/omega.app.icon/blob/main/icon-512x512.png?raw=true">
+    <link rel="apple-touch-icon" href="https://github.com/connecttraderbrothers/omega.app.icon/blob/main/icon-512x512.png?raw=true">
+    <link rel="stylesheet" href="splash.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- MATRIX BACKGROUND CANVAS -->
+    <canvas id="matrix"></canvas>
+
+    <!-- SPLASH SCREEN -->
+    <div id="splashScreen" class="splash-container">
+        <div class="logo-wrapper">
+            <img src="https://github.com/connecttraderbrothers/omega.app.icon/blob/main/icon-512x512.png?raw=true" alt="Omega Logo" class="splash-logo">
+        </div>
+        <div class="company-name">OMEGA</div>
+        <div class="tagline">Professional Business Tools</div>
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+        <button class="enter-button" onclick="enterMatrix()">Enter The Matrix</button>
+    </div>
+
+    <!-- DASHBOARD SCREEN -->
+    <div id="dashboardScreen" style="display: none;">
+        <div class="dashboard-header">
+            <img src="https://github.com/connecttraderbrothers/omega.app.icon/blob/main/icon-512x512.png?raw=true" alt="Logo" class="header-logo">
+            <div class="header-content">
+                <div class="header-title">OMEGA</div>
+                <div class="header-subtitle">Professional Business Tools</div>
+            </div>
+        </div>
+
+        <div class="dashboard-container">
+            <div class="welcome-section">
+                <div class="welcome-title">Welcome Back</div>
+                <div class="welcome-text">Select a tool to get started</div>
+            </div>
+
+            <h2 class="section-title">Available Tools</h2>
+
+            <div class="tools-grid">
+                <div class="tool-card active" onclick="showQuotationTool()">
+                    <div class="tool-icon">📋</div>
+                    <div class="tool-title">Quotation Tool</div>
+                    <div class="tool-description">
+                        Create professional estimates and quotations for your clients with automated calculations and PDF generation.
+                    </div>
+                    <span class="tool-status status-active">Active</span>
+                    <ul class="tool-features">
+                        <li>Auto-generate customer IDs</li>
+                        <li>Standard trade rates included</li>
+                        <li>Professional PDF output</li>
+                        <li>VAT calculation</li>
+                    </ul>
+                </div>
+
+                <div class="tool-card active" onclick="showInvoiceTool()">
+                    <div class="tool-icon">📊</div>
+                    <div class="tool-title">Invoice Manager</div>
+                    <div class="tool-description">
+                        Manage invoices, track payments, and maintain client records all in one place.
+                    </div>
+                    <span class="tool-status status-active">Active</span>
+                    <ul class="tool-features">
+                        <li>Invoice generation</li>
+                        <li>Payment tracking</li>
+                        <li>Client database</li>
+                        <li>Financial reports</li>
+                    </ul>
+                </div>
+
+                <div class="tool-card active" onclick="showStatementTool()">
+                    <div class="tool-icon">📄</div>
+                    <div class="tool-title">Statement Generator</div>
+                    <div class="tool-description">
+                        Create customisable statements with flexible categories and professional PDF output.
+                    </div>
+                    <span class="tool-status status-active">Active</span>
+                    <ul class="tool-features">
+                        <li>Custom category names</li>
+                        <li>Standard trade rates included</li>
+                        <li>Professional PDF output</li>
+                        <li>VAT calculation</li>
+                    </ul>
+                </div>
+
+                <div class="tool-card disabled">
+                    <div class="tool-icon">💰</div>
+                    <div class="tool-title">Expense Tracker</div>
+                    <div class="tool-description">
+                        Track business expenses, receipts, and generate financial reports for tax purposes.
+                    </div>
+                    <span class="tool-status status-coming-soon">Coming Soon</span>
+                    <ul class="tool-features">
+                        <li>Receipt scanning</li>
+                        <li>Category management</li>
+                        <li>Monthly reports</li>
+                        <li>Tax calculations</li>
+                    </ul>
+                </div>
+
+                <div class="tool-card disabled">
+                    <div class="tool-icon">📦</div>
+                    <div class="tool-title">Inventory Manager</div>
+                    <div class="tool-description">
+                        Keep track of materials, tools, and supplies with automated stock alerts.
+                    </div>
+                    <span class="tool-status status-coming-soon">Coming Soon</span>
+                    <ul class="tool-features">
+                        <li>Stock tracking</li>
+                        <li>Low stock alerts</li>
+                        <li>Supplier management</li>
+                        <li>Order history</li>
+                    </ul>
+                </div>
+
+                <div class="tool-card disabled">
+                    <div class="tool-icon">👥</div>
+                    <div class="tool-title">Client Portal</div>
+                    <div class="tool-description">
+                        Give clients access to their quotes, invoices, and project updates in real-time.
+                    </div>
+                    <span class="tool-status status-coming-soon">Coming Soon</span>
+                    <ul class="tool-features">
+                        <li>Client dashboard</li>
+                        <li>Document access</li>
+                        <li>Message center</li>
+                        <li>Payment portal</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUOTATION TOOL SCREEN -->
+    <div id="quotationScreen" style="display: none;">
+        <div class="back-navigation">
+            <button class="back-btn" onclick="showDashboard()">
+                ← Back to Dashboard
+            </button>
+        </div>
+
+        <div class="container">
+            <div class="header">
+                <div class="logo-container">
+                    <img src="https://github.com/connecttraderbrothers/omega.app.icon/blob/main/icon-512x512.png?raw=true" alt="Omega Logo" class="logo">
+                </div>
+                <div class="header-text">
+                    <h1>OMEGA</h1>
+                    <p>Professional Quotation Tool</p>
+                </div>
+            </div>
+            
+            <div class="estimate-counter">
+                Next Estimate Number: <span id="estimateCounter">#0001</span>
+                <button class="edit-number-btn" onclick="editEstimateNumber()" title="Change estimate number">&#9998;</button>
+            </div>
+
+            <div class="section" id="importEstimateSection">
+                <h2 class="section-title">Import Previous Estimate <span style="font-size:13px;font-weight:400;color:#888;">(Optional)</span></h2>
+                <p style="font-size:13px;color:#666;margin-bottom:15px;line-height:1.5;">Drop a PDF generated by this tool to load its items and sections into the current quote.</p>
+                <div id="estimateImportZone" class="import-zone" onclick="document.getElementById('estimateImportFileInput').click()">
+                    <div class="import-zone-icon">&#128196;</div>
+                    <p class="import-zone-text">Drag &amp; drop an estimate PDF here</p>
+                    <p class="import-zone-sub">or click to browse files</p>
+                </div>
+                <input type="file" id="estimateImportFileInput" accept=".pdf" style="display:none;" onchange="handleEstimatePDFImport(event)">
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Client Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Client Name *</label>
+                        <input type="text" id="clientName" placeholder="Enter full name (e.g., John Smith)">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Phone</label>
+                        <input type="text" id="clientPhone" placeholder="Enter phone number">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Email</label>
+                        <input type="email" id="clientEmail" placeholder="Enter email address">
+                    </div>
+                    <div class="form-group">
+                        <label>Project Address *</label>
+                        <input type="text" id="projectAddress" placeholder="Enter full address">
+                    </div>
+                   <div class="form-group">
+                        <label>Project Postcode</label>
+                        <input type="text" id="projectPostcode" placeholder="Enter postcode">
+                    </div>
+                    <div class="form-group">
+                        <label>Customer ID (Auto-generated)</label>
+                        <input type="text" id="customerId" placeholder="Auto-generated from name" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" id="estimateSectioningSection">
+                <h2 class="section-title">Sectioning</h2>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Create named sections to organise your line items (e.g., Bedroom 1, Kitchen, Bathroom). Tick a section to add items into it.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Section Name</label>
+                        <input type="text" id="estimateNewSectionName" placeholder="e.g., Bedroom 1, Kitchen, Living Room...">
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="addEstimateSection()">Add Section</button>
+                <div id="estimateSectionsList" style="margin-top: 15px;">
+                    <p style="font-size: 13px; color: #888; font-style: italic;">No sections added yet.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Add Line Item</h2>
+
+                <div id="estimateActiveSectionIndicator" style="display: none; margin-bottom: 12px; padding: 8px 12px; background: #fff8e7; border: 1px solid #d4af37; border-radius: 6px; font-size: 13px; color: #5a4200; font-weight: bold;"></div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Trade Category</label>
+                        <select id="tradeCategory">
+                            <option value="">Select a trade...</option>
+                            <option value="Downtakings">Downtakings</option>
+                            <option value="General Building">General Building</option>
+                            <option value="Building work">Building work</option>
+                            <option value="Carpentry">Carpentry</option>
+                            <option value="Joinery">Joinery</option>
+                            <option value="Electrical">Electricals</option>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Gas work/Plumbing">Gas work/Plumbing</option>
+                            <option value="Plastering">Plastering</option>
+                            <option value="Skimming /Painting">Skimming /Painting</option>
+                            <option value="Painting & Decorating">Painting & Decorating</option>
+                            <option value="Tiling">Tiling</option>
+                            <option value="Roofing">Roofing</option>
+                            <option value="Kitchen Fitting">Kitchen Fitting</option>
+                            <option value="Bathroom Fitting">Bathrooms</option>
+                            <option value="Flooring">Flooring</option>
+                            <option value="Bricklaying">Bricklaying</option>
+                            <option value="HVAC">HVAC (Heating & Ventilation)</option>
+                            <option value="Groundworks">Groundworks</option>
+                            <option value="Scaffolding">Scaffolding</option>
+                            <option value="Glazing">Glazing</option>
+                            <option value="Insulation">Insulation</option>
+                            <option value="Materials">Materials</option>
+                            <option value="Custom">Custom Category</option>
+                        </select>
+                        <div id="tradeRateInfo" class="rate-info"></div>
+                        <div id="customCategoryGroup" class="hidden" style="margin-top:8px;">
+                            <input type="text" id="customCategoryName" placeholder="Enter category name" style="width:100%;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <input type="text" id="description" placeholder="Describe the work">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Quantity *</label>
+                        <input type="number" id="quantity" value="1" min="0.1" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Rate Type</label>
+                        <div class="rate-type-selector">
+                            <button type="button" class="rate-type-btn" data-type="hourly">Hourly Rate</button>
+                            <button type="button" class="rate-type-btn" data-type="daily">Day Rate</button>
+                            <button type="button" class="rate-type-btn active" data-type="job">Per Job</button>
+                            <button type="button" class="rate-type-btn" data-type="custom">Custom</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label id="rateLabel">Unit Price (£) *</label>
+                        <input type="number" id="unitPrice" placeholder="Enter price or use standard rate" step="0.01" min="0">
+                    </div>
+                    <div class="form-group hidden" id="customUnitGroup">
+                        <label>Custom Unit Name</label>
+                        <input type="text" id="customUnit" placeholder="e.g., per sqm, per item">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="addItem()">Add Item to Quote</button>
+            </div>
+
+            <div class="section" id="quoteSection" style="display: none;">
+                <h2 class="section-title">Quote Items</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-right">Unit Price</th>
+                                <th class="text-right">Total</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quoteItems"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section" id="notesSection">
+                <h2 class="section-title">Additional Notes (Optional)</h2>
+                <div class="form-group">
+                    <label>Custom Notes</label>
+                    <textarea id="customNotes" rows="4" placeholder="Add any additional notes or terms..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Deposit Percentage</label>
+                    <input type="number" id="depositPercent" value="30" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>VAT</label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal; margin-top: 8px;">
+                        <input type="checkbox" id="removeVat" onchange="updateQuoteTable()" style="width: 16px; height: 16px; cursor: pointer;">
+                        Remove VAT from total
+                    </label>
+                </div>
+            </div>
+
+            <div id="generateSection" style="display: none; margin-top: 20px; text-align: center;">
+                <button class="btn btn-success" onclick="previewQuote()">Preview Quote</button>
+                <button class="btn btn-secondary" onclick="downloadQuote()">Download PDF</button>
+                <button class="btn btn-secondary" onclick="exportEstimateItems()" title="Export items as a file to import into the Statement tool">Export Items</button>
+            </div>
+        </div>
+
+        <div id="previewModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="close" onclick="closePreview()">&times;</span>
+                    <h2>Quote Preview</h2>
+                </div>
+                <div class="modal-body" id="previewBody">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-success" onclick="downloadQuote()">Download PDF</button>
+                    <button class="btn btn-secondary" onclick="closePreview()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INVOICE TOOL SCREEN -->
+    <div id="invoiceScreen" style="display: none;">
+        <div class="back-navigation">
+            <button class="back-btn" onclick="showDashboard()">
+                ← Back to Dashboard
+            </button>
+        </div>
+
+        <div class="container">
+            <div class="header">
+                <div class="logo-container">
+                    <img src="https://github.com/connecttraderbrothers/omega.app.icon/blob/main/icon-512x512.png?raw=true" alt="Omega Logo" class="logo">
+                </div>
+                <div class="header-text">
+                    <h1>OMEGA</h1>
+                    <p>Professional Invoice Tool</p>
+                </div>
+            </div>
+            
+            <div class="estimate-counter">
+                Next Invoice Number: <span id="invoiceCounter">#0001</span>
+                <button class="edit-number-btn" onclick="editInvoiceNumber()" title="Change invoice number">&#9998;</button>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Client Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Client Name *</label>
+                        <input type="text" id="invoiceClientName" placeholder="Enter full name (e.g., John Smith)">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Phone</label>
+                        <input type="text" id="invoiceClientPhone" placeholder="Enter phone number">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Email</label>
+                        <input type="email" id="invoiceClientEmail" placeholder="Enter email address">
+                    </div>
+                    <div class="form-group">
+                        <label>Project Address *</label>
+                        <input type="text" id="invoiceProjectAddress" placeholder="Enter full address">
+                    </div>
+                   <div class="form-group">
+                        <label>Project Postcode</label>
+                        <input type="text" id="invoiceProjectPostcode" placeholder="Enter postcode">
+                    </div>
+                    <div class="form-group">
+                        <label>Customer ID (Auto-generated)</label>
+                        <input type="text" id="invoiceCustomerId" placeholder="Auto-generated from name" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Payment Terms</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Payment Due (Days)</label>
+                        <input type="number" id="paymentDueDays" value="30" min="0" max="365">
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Status</label>
+                        <select id="paymentStatus">
+                            <option value="unpaid">Unpaid</option>
+                            <option value="partial">Partially Paid</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" id="invoiceSectioningSection">
+                <h2 class="section-title">Sectioning</h2>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Create named sections to organise your line items (e.g., Bedroom 1, Kitchen, Bathroom). Tick a section to add items into it.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Section Name</label>
+                        <input type="text" id="invoiceNewSectionName" placeholder="e.g., Bedroom 1, Kitchen, Living Room...">
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="addInvoiceSection()">Add Section</button>
+                <div id="invoiceSectionsList" style="margin-top: 15px;">
+                    <p style="font-size: 13px; color: #888; font-style: italic;">No sections added yet.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Add Line Item</h2>
+
+                <div id="invoiceActiveSectionIndicator" style="display: none; margin-bottom: 12px; padding: 8px 12px; background: #fff8e7; border: 1px solid #d4af37; border-radius: 6px; font-size: 13px; color: #5a4200; font-weight: bold;"></div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Trade Category</label>
+                        <select id="invoiceTradeCategory">
+                            <option value="">Select a trade...</option>
+                            <option value="Downtakings">Downtakings</option>
+                            <option value="General Building">General Building</option>
+                            <option value="Building work">Building work</option>
+                            <option value="Carpentry">Carpentry</option>
+                            <option value="Joinery">Joinery</option>
+                            <option value="Electrical">Electricals</option>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Gas work/Plumbing">Gas work/Plumbing</option>
+                            <option value="Plastering">Plastering</option>
+                            <option value="Skimming /Painting">Skimming /Painting</option>
+                            <option value="Painting & Decorating">Painting & Decorating</option>
+                            <option value="Tiling">Tiling</option>
+                            <option value="Roofing">Roofing</option>
+                            <option value="Kitchen Fitting">Kitchen Fitting</option>
+                            <option value="Bathroom Fitting">Bathrooms</option>
+                            <option value="Flooring">Flooring</option>
+                            <option value="Bricklaying">Bricklaying</option>
+                            <option value="HVAC">HVAC (Heating & Ventilation)</option>
+                            <option value="Groundworks">Groundworks</option>
+                            <option value="Scaffolding">Scaffolding</option>
+                            <option value="Glazing">Glazing</option>
+                            <option value="Insulation">Insulation</option>
+                            <option value="Materials">Materials</option>
+                            <option value="Custom">Custom Category</option>
+                        </select>
+                        <div id="invoiceTradeRateInfo" class="rate-info"></div>
+                        <div id="invoiceCustomCategoryGroup" class="hidden" style="margin-top:8px;">
+                            <input type="text" id="invoiceCustomCategoryName" placeholder="Enter category name" style="width:100%;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <input type="text" id="invoiceDescription" placeholder="Describe the work">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Quantity *</label>
+                        <input type="number" id="invoiceQuantity" value="1" min="0.1" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Rate Type</label>
+                        <div class="rate-type-selector">
+                            <button type="button" class="rate-type-btn invoice-rate-btn" data-type="hourly">Hourly Rate</button>
+                            <button type="button" class="rate-type-btn invoice-rate-btn" data-type="daily">Day Rate</button>
+                            <button type="button" class="rate-type-btn invoice-rate-btn active" data-type="job">Per Job</button>
+                            <button type="button" class="rate-type-btn invoice-rate-btn" data-type="custom">Custom</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label id="invoiceRateLabel">Unit Price (£) *</label>
+                        <input type="number" id="invoiceUnitPrice" placeholder="Enter price or use standard rate" step="0.01" min="0">
+                    </div>
+                    <div class="form-group hidden" id="invoiceCustomUnitGroup">
+                        <label>Custom Unit Name</label>
+                        <input type="text" id="invoiceCustomUnit" placeholder="e.g., per sqm, per item">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="addInvoiceItem()">Add Item to Invoice</button>
+            </div>
+
+            <div class="section" id="invoiceItemsSection" style="display: none;">
+                <h2 class="section-title">Invoice Items</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-right">Unit Price</th>
+                                <th class="text-right">Total</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoiceItems"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section" id="invoiceNotesSection">
+                <h2 class="section-title">Additional Notes (Optional)</h2>
+                <div class="form-group">
+                    <label>Custom Notes</label>
+                    <textarea id="invoiceCustomNotes" rows="4" placeholder="Add any additional notes or payment terms..."></textarea>
+                </div>
+            </div>
+
+            <div class="section" id="invoiceDeductionSection">
+                <h2 class="section-title">Deductions (Optional)</h2>
+                <div class="form-group">
+                    <label for="invoiceDeduction">Deduction Amount (£)</label>
+                    <input type="number" id="invoiceDeduction" step="0.01" min="0" value="0" placeholder="0.00">
+                    <small style="display: block; margin-top: 5px; color: #666; font-size: 12px;">Enter any amount to deduct from the total (after VAT)</small>
+                </div>
+                <div class="form-group">
+                    <label>VAT</label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal; margin-top: 8px;">
+                        <input type="checkbox" id="invoiceRemoveVat" onchange="updateInvoiceTable()" style="width: 16px; height: 16px; cursor: pointer;">
+                        Remove VAT from total
+                    </label>
+                </div>
+            </div>
+
+            <div id="generateInvoiceSection" style="display: none; margin-top: 20px; text-align: center;">
+                <button class="btn btn-success" onclick="previewInvoice()">Preview Invoice</button>
+                <button class="btn btn-secondary" onclick="downloadInvoice()">Download PDF</button>
+                <button class="btn btn-secondary" onclick="exportInvoiceItems()" title="Export items as a file to import into the Statement tool">Export Items</button>
+            </div>
+        </div>
+
+        <div id="invoicePreviewModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="close" onclick="closeInvoicePreview()">&times;</span>
+                    <h2>Invoice Preview</h2>
+                </div>
+                <div class="modal-body" id="invoicePreviewBody">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-success" onclick="downloadInvoice()">Download PDF</button>
+                    <button class="btn btn-secondary" onclick="closeInvoicePreview()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- STATEMENT TOOL SCREEN -->
+    <div id="statementScreen" style="display: none;">
+        <div class="back-navigation">
+            <button class="back-btn" onclick="showDashboard()">
+                ← Back to Dashboard
+            </button>
+        </div>
+
+        <div class="container">
+            <div class="header">
+                <div class="logo-container">
+                    <img src="https://github.com/connecttraderbrothers/omega.app.icon/blob/main/icon-512x512.png?raw=true" alt="Omega Logo" class="logo">
+                </div>
+                <div class="header-text">
+                    <h1>OMEGA</h1>
+                    <p>Professional Statement Tool</p>
+                </div>
+            </div>
+
+            <div class="estimate-counter">
+                Next Statement Number: <span id="statementCounter">#0001</span>
+                <button class="edit-number-btn" onclick="editStatementNumber()" title="Change statement number">&#9998;</button>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Client Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Client Name *</label>
+                        <input type="text" id="statementClientName" placeholder="Enter full name (e.g., John Smith)">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Phone</label>
+                        <input type="text" id="statementClientPhone" placeholder="Enter phone number">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Email</label>
+                        <input type="email" id="statementClientEmail" placeholder="Enter email address">
+                    </div>
+                    <div class="form-group">
+                        <label>Project Address *</label>
+                        <input type="text" id="statementProjectAddress" placeholder="Enter full address">
+                    </div>
+                   <div class="form-group">
+                        <label>Project Postcode</label>
+                        <input type="text" id="statementProjectPostcode" placeholder="Enter postcode">
+                    </div>
+                    <div class="form-group">
+                        <label>Customer ID (Auto-generated)</label>
+                        <input type="text" id="statementCustomerId" placeholder="Auto-generated from name" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" id="statementSectioningSection">
+                <h2 class="section-title">Sectioning</h2>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Create named sections to organise your line items (e.g., Bedroom 1, Kitchen). Tick a section to direct new items into it.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Section Name</label>
+                        <input type="text" id="statementNewSectionName" placeholder="e.g., Bedroom 1, Kitchen, Living Room...">
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="addStatementSection()">Add Section</button>
+                <div id="statementSectionsList" style="margin-top: 15px;">
+                    <p style="color: #999; font-size: 13px; margin-top: 8px;">No sections yet. Add a section above to organise your line items.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Import from Estimate / Invoice</h2>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Drag and drop a PDF generated by the Estimate or Invoice tool to automatically fill in the client info and line items. You can also attach an <strong>Export Items</strong> JSON file from those tools.</p>
+                <div id="statementImportZone" class="import-zone">
+                    <div class="import-zone-icon">&#8659;</div>
+                    <p class="import-zone-text">Drag &amp; drop a PDF or export file here</p>
+                    <p class="import-zone-sub">or click to browse &nbsp;·&nbsp; accepts .pdf and .json</p>
+                </div>
+                <input type="file" id="statementImportFile" accept=".pdf,.json" style="display: none;">
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Add Line Item</h2>
+                <div id="statementActiveSectionIndicator" style="display: none; margin-bottom: 12px; padding: 8px 12px; background: #fff8e7; border: 1px solid #d4af37; border-radius: 6px; font-size: 13px; color: #5a4200; font-weight: bold;"></div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Trade Category</label>
+                        <select id="statementTradeCategory">
+                            <option value="">Select a trade...</option>
+                            <option value="Downtakings">Downtakings</option>
+                            <option value="General Building">General Building</option>
+                            <option value="Building work">Building work</option>
+                            <option value="Carpentry">Carpentry</option>
+                            <option value="Joinery">Joinery</option>
+                            <option value="Electrical">Electricals</option>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Gas work/Plumbing">Gas work/Plumbing</option>
+                            <option value="Plastering">Plastering</option>
+                            <option value="Skimming /Painting">Skimming /Painting</option>
+                            <option value="Painting & Decorating">Painting & Decorating</option>
+                            <option value="Tiling">Tiling</option>
+                            <option value="Roofing">Roofing</option>
+                            <option value="Kitchen Fitting">Kitchen Fitting</option>
+                            <option value="Bathroom Fitting">Bathrooms</option>
+                            <option value="Flooring">Flooring</option>
+                            <option value="Bricklaying">Bricklaying</option>
+                            <option value="HVAC">HVAC (Heating & Ventilation)</option>
+                            <option value="Groundworks">Groundworks</option>
+                            <option value="Scaffolding">Scaffolding</option>
+                            <option value="Glazing">Glazing</option>
+                            <option value="Insulation">Insulation</option>
+                            <option value="Materials">Materials</option>
+                            <option value="Custom">Custom (enter name)</option>
+                        </select>
+                        <div id="statementTradeRateInfo" class="rate-info"></div>
+                    </div>
+                    <div class="form-group hidden" id="statementCustomCategoryGroup">
+                        <label>Custom Category Name *</label>
+                        <input type="text" id="statementCustomCategoryName" placeholder="Enter category name">
+                    </div>
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <input type="text" id="statementDescription" placeholder="Describe the work">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Quantity *</label>
+                        <input type="number" id="statementQuantity" value="1" min="0.1" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Rate Type</label>
+                        <div class="rate-type-selector">
+                            <button type="button" class="rate-type-btn statement-rate-btn" data-type="hourly">Hourly Rate</button>
+                            <button type="button" class="rate-type-btn statement-rate-btn" data-type="daily">Day Rate</button>
+                            <button type="button" class="rate-type-btn statement-rate-btn active" data-type="job">Per Job</button>
+                            <button type="button" class="rate-type-btn statement-rate-btn" data-type="custom">Custom</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label id="statementRateLabel">Unit Price (£) *</label>
+                        <input type="number" id="statementUnitPrice" placeholder="Enter price or use standard rate" step="0.01" min="0">
+                    </div>
+                    <div class="form-group hidden" id="statementCustomUnitGroup">
+                        <label>Custom Unit Name</label>
+                        <input type="text" id="statementCustomUnit" placeholder="e.g., per sqm, per item">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="addStatementItem()">Add Item to Statement</button>
+            </div>
+
+            <div class="section" id="statementItemsSection" style="display: none;">
+                <h2 class="section-title">Statement Items</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-right">Unit Price</th>
+                                <th class="text-right">Total</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statementItemsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section" id="statementNotesSection">
+                <h2 class="section-title">Additional Notes (Optional)</h2>
+                <div class="form-group">
+                    <label>Custom Notes</label>
+                    <textarea id="statementCustomNotes" rows="4" placeholder="Add any additional notes or terms..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>VAT</label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal; margin-top: 8px;">
+                        <input type="checkbox" id="statementRemoveVat" onchange="updateStatementTable()" style="width: 16px; height: 16px; cursor: pointer;">
+                        Remove VAT from total
+                    </label>
+                </div>
+            </div>
+
+            <div id="generateStatementSection" style="display: none; margin-top: 20px; text-align: center;">
+                <button class="btn btn-success" onclick="previewStatement()">Preview Statement</button>
+                <button class="btn btn-secondary" onclick="downloadStatement()">Download PDF</button>
+            </div>
+        </div>
+
+        <div id="statementPreviewModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="close" onclick="closeStatementPreview()">&times;</span>
+                    <h2>Statement Preview</h2>
+                </div>
+                <div class="modal-body" id="statementPreviewBody">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-success" onclick="downloadStatement()">Download PDF</button>
+                    <button class="btn btn-secondary" onclick="closeStatementPreview()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matrix Animation Script -->
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas to full screen
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Characters to use - mix of katakana, Latin letters, and numbers
+        const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+        const charArray = chars.split('');
+
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+
+        // Array to store y-position of each drop
+        const drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.floor(Math.random() * canvas.height / fontSize);
+        }
+
+        function draw() {
+            // Add semi-transparent black to create fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                // Random character from array
+                const char = charArray[Math.floor(Math.random() * charArray.length)];
+                
+                // Gradient effect - brighter at the front
+                const gradient = Math.min(255, 100 + drops[i] * 10);
+                ctx.fillStyle = `rgb(0, ${gradient}, 0)`;
+                
+                // Draw the character
+                ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+
+                // Reset drop to top randomly or when it goes off screen
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        // Run the animation
+        const matrixInterval = setInterval(draw, 35);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drops.length = 0;
+            const newColumns = canvas.width / fontSize;
+            for (let i = 0; i < newColumns; i++) {
+                drops[i] = Math.floor(Math.random() * canvas.height / fontSize);
+            }
+        });
+    </script>
+
+    <script src="navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <script src="script.js"></script>
+    <script src="pdf_generator.js"></script>
+    <script src="invoice.js"></script>
+    <script src="invoice_pdfgen.js"></script>
+    <script src="statement.js"></script>
+    <script src="statement_pdfgen.js"></script>
+</body>
+</html>
