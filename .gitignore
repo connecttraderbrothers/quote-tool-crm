@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+
+# PocketBase runtime data — never commit the database or uploaded files
+pocketbase/pb_data/

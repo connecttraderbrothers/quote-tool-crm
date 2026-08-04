@@ -4,278 +4,220 @@ Guidance for AI assistants working in this repository.
 
 ## What this is
 
-**OMEGA** — a static, single-page web app (installable as a PWA) that Trader Brothers Ltd
-uses to produce client-facing paperwork for building/trade jobs. It ships three tools:
+**OMEGA** — a CRM and document tool for Trader Brothers Ltd, a building/trade firm.
+It produces client-facing paperwork (estimates, invoices, statements), tracks customers,
+and follows estimates through a won/lost/no-reply pipeline.
 
-| Tool | Purpose | Output |
+| Document | Purpose | Output |
 | --- | --- | --- |
-| **Quotation / Estimate** | Priced quote with deposit terms and a 30-day expiry | `Estimate_####_Client.pdf` |
-| **Invoice** | Billing document with payment terms, bank details, deductions | `Invoice_####_Client.pdf` |
-| **Statement** | Statement of work, imports items from the other two tools | `Statement_####_Client.pdf` |
+| **Estimate** | Priced quote, deposit terms, 30-day expiry | `Estimate_####_Client.pdf` |
+| **Invoice** | Payment terms, bank details, post-VAT deductions | `Invoice_####_Client.pdf` |
+| **Statement** | Statement of work, 31-day expiry | `Statement_####_Client.pdf` |
 
-Two more dashboard cards (Expense Tracker, Inventory Manager, Client Portal) are
-placeholder "Coming Soon" tiles with no code behind them.
+The app was rebuilt from a static single-page tool into a database-backed CRM. The
+original is preserved in `legacy/` — see [Legacy](#legacy).
 
-## Build, run, test
+## Stack
 
-There is **no build system, no package manager, no dependency manifest, and no test
-suite.** Do not add `package.json`, bundlers, or a framework unless explicitly asked.
-
-To run it, serve the directory statically and open `index.html`:
+| Layer | Choice |
+| --- | --- |
+| Frontend | React 18 + Vite, plain CSS, React Router |
+| Backend | PocketBase (SQLite + auth + REST + JS hooks) |
+| PDF | Gotenberg (self-hosted headless Chromium) |
+| Hosting | Oracle Cloud ARM VM → Coolify; frontend on Cloudflare Pages |
 
 ```bash
-python3 -m http.server 8000    # then open http://localhost:8000
+npm install
+npm run dev      # Vite on :5173, proxies /api to PocketBase on :8090
+npm run build
+npm test         # smoke test — totals, escaping, template invariants
+
+# PocketBase locally
+./pocketbase serve --dir ./pocketbase/pb_data --hooksDir ./pocketbase/pb_hooks
 ```
 
-Opening `index.html` via `file://` mostly works, but PDF download and PDF import will
-fail (CORS / cross-origin `fetch`), so prefer the local server.
+Full deployment runbook: [`deploy/README.md`](deploy/README.md).
 
-Verification is manual — see [Manual test checklist](#manual-test-checklist).
-
-## File map and load order
-
-Everything lives flat in the repo root. Scripts are plain `<script>` tags at the bottom
-of `index.html` (lines 866-874) — **there are no modules, so load order is the
-dependency graph**, and everything shares one global scope.
+## Layout
 
 ```
-index.html            All five screens + inline matrix-rain canvas animation
-  ├─ navigation.js         Screen switching (show*Tool / showDashboard / enterMatrix)
-  ├─ pdf.js (CDN 3.11.174) PDF text extraction, used by both import paths
-  ├─ script.js             ESTIMATE: state, rates, line items, sections, export
-  ├─ pdf_generator.js      ESTIMATE: preview HTML, PDFShift call, PDFSHIFT_API_KEY
-  ├─ invoice.js            INVOICE: EMPTY FILE — see "Known gaps" below
-  ├─ invoice_pdfgen.js     INVOICE: preview + PDF HTML
-  ├─ statement.js          STATEMENT: state, rates, items, sections, PDF/JSON import
-  └─ statement_pdfgen.js   STATEMENT: preview + PDF HTML
+src/
+  lib/
+    pb.js          PocketBase client + error formatting
+    auth.js        useAuth hook, current company/user, roles
+    money.js       VAT_RATE and computeTotals — THE money source of truth
+    rates.js       Trade rates, category order, category options — ONE copy
+    format.js      escapeHtml, dates, customer refs, padNumber
+    customers.js   Customer CRUD
+    documents.js   Document/section/item CRUD, lifecycle, deposit invoices
+    pdf.js         Render + download via the PocketBase PDF route
+  documents/
+    docTypes.js    Per-type config — the parameterisation of the three tools
+    template.js    THE document template (preview AND PDF)
+  components/      LineItemForm, LineItemsTable, SectionManager, DocumentPreview, StatusBadge
+  screens/         Login, Dashboard, Pipeline, Customers, CustomerProfile, DocumentList, DocumentEditor
 
-styles.css     Shared tool-screen chrome (.container, .section, .form-grid, tables, modals)
-dashboard.css  #dashboardScreen and tool cards only
-splash.css     Splash screen and "Enter The Matrix" button only
-manifest.json  PWA manifest (no service worker exists — the app is not offline-capable)
+pocketbase/
+  collections.json Importable schema (Admin UI → Settings → Import collections)
+  pb_hooks/
+    main.pb.js     Line totals, document totals, numbering, activity log
+    pdf.pb.js      Authenticated Gotenberg proxy
+
+deploy/            docker-compose.yml + the OCI/Coolify runbook
+legacy/            The original static app, kept for reference
+test/smoke.mjs     Dependency-free assertions on the calculation and template
 ```
 
-`pdf_generator.js` declares `const PDFSHIFT_API_KEY` at global scope. It loads before the
-other generators, but they hardcode the key inline rather than reading it — see
-[The PDFShift key](#the-pdfshift-key).
+## The three rules that matter most
 
-## Architecture
+### 1. One template, two outputs
 
-### Screens
+`src/documents/template.js` renders **both** the on-screen preview and the PDF.
+`standalone: false` returns a fragment for the modal; `standalone: true` wraps it in a
+full `<!DOCTYPE html>` document for Gotenberg.
 
-`index.html` holds five sibling `<div>` screens: `#splashScreen`, `#dashboardScreen`,
-`#quotationScreen`, `#invoiceScreen`, `#statementScreen`. `navigation.js` shows one and
-sets the other four to `display: none`. There is no router, no history integration, and
-no state preserved across screen switches (the globals simply persist).
+The legacy app kept two hand-maintained copies of every document's markup, which drifted
+constantly — the preview and the downloaded PDF disagreed. **Never reintroduce a second
+copy.** `npm test` asserts the two outputs share a byte-identical body.
 
-### The three-tool parallel structure
+### 2. One code path for three document types
 
-The estimate, invoice, and statement tools are **near-identical copies of each other**,
-distinguished only by an identifier prefix. This is the single most important thing to
-understand before editing.
+Estimate, invoice and statement are the same code. Everything that genuinely differs
+lives in `src/documents/docTypes.js` as data: banner text, expiry days, notes lines, and
+feature flags (`hasDeposit`, `hasBankDetails`, `hasDeduction`, `hasPaymentTerms`,
+`tracksPipeline`).
 
-| Concept | Estimate | Invoice | Statement |
-| --- | --- | --- | --- |
-| Items array | `items` | `invoiceItems` | `statementItems` |
-| Sections array | `estimateSections` | `invoiceSections` | `statementSections` |
-| Active section | `activeEstimateSection` | — | `activeStatementSection` |
-| Counter | `estimateNumber` | `invoiceNumber` | `statementNumber` |
-| Edit cursor | `editingIndex` | — | `editingStatementIndex` |
-| Rate table | `tradeRates` | — | `statementTradeRates` |
-| Category order | `categoryOrder` | — | `statementCategoryOrder` |
-| Add item | `addItem()` | `addInvoiceItem()` | `addStatementItem()` |
-| Redraw table | `updateQuoteTable()` | `updateInvoiceTable()` | `updateStatementTable()` |
-| Preview | `previewQuote()` | `previewInvoice()` | `previewStatement()` |
-| Download | `downloadQuote()` | `downloadInvoice()` | `downloadStatement()` |
-| DOM id prefix | none (`clientName`) | `invoice*` | `statement*` |
-| Rate button class | `.rate-type-btn` | `.invoice-rate-btn` | `.statement-rate-btn` |
+To change behaviour for one type, add or adjust a flag there — do not branch on
+`doc.type` in components. The legacy app had three copy-pasted files and every bug had to
+be fixed three times, which in practice meant it wasn't.
 
-**A change to one tool almost always needs the same change in the other two.** When you
-fix a bug in `script.js`, check `statement.js` for the same bug — they were copy-pasted.
-`tradeRates`/`categoryOrder` in `script.js` and `statementTradeRates`/
-`statementCategoryOrder` in `statement.js` are currently byte-for-byte identical and
-must be kept in sync; the category lists must also match the three `<select>` blocks in
-`index.html`.
+### 3. The server owns money and numbering
 
-### Line item shape
+`pocketbase/pb_hooks/main.pb.js` derives on write:
 
-Every tool pushes this object into its items array:
+- **`line_total`** from `quantity × unit_price`. Never send it from the client.
+- **Document totals** (`subtotal`, `vat_amount`, `total`, `amount_due`) recomputed
+  whenever items change. Denormalised so the pipeline can sum without loading items.
+- **`number`** allocated inside a transaction from `document_counters`.
 
-```js
-{
-  category:    'Carpentry',   // trade name, or a free-text custom category
-  description: 'Fit new door',
-  quantity:    2,
-  unit:        'hour' | 'day' | 'job' | <custom unit string>,
-  unitPrice:   32,
-  lineTotal:   64,            // precomputed = unitPrice * quantity, NOT derived at render
-  section:     'Kitchen'      // '' when unsectioned
-}
+The frontend mirror is `src/lib/money.js` (`computeTotals`) for instant UI feedback. If
+you change a rule, change it in **both** — they must agree.
+
+## Data model
+
+```
+companies ─┬─ users (auth: company, role owner|admin|staff)
+           ├─ customers ─── projects
+           ├─ documents ─┬─ document_sections
+           │             ├─ document_items
+           │             └─ payments
+           ├─ people (employees / subcontractors)
+           ├─ activity
+           └─ document_counters
 ```
 
-`lineTotal` is stored, not computed on read. Any code path that mutates `quantity` or
-`unitPrice` must recompute `lineTotal` or totals silently go stale.
+- **One `documents` table** with a `type` discriminator, not three. Converting an
+  estimate to a deposit invoice is a row copy (`createDepositInvoice`).
+- **Sections are records with ids.** Items reference `section` by id. Renaming is one
+  update — the legacy version stored the section as a string on each item, so a rename
+  meant rewriting every item and missing one orphaned it silently.
+- **`snapshot`** freezes what was sent when a document is marked sent. If rates change
+  later, an accepted estimate still shows the agreed price.
+- **`customers.ref`** (e.g. `JOHSMI4821`) is generated once at creation and stored,
+  with a unique index on `(company, ref)`. The legacy version regenerated a random
+  suffix on every keystroke, so the ID on a saved PDF matched nothing.
 
-### Sections
+### Multi-tenancy
 
-Sections are an ordered array of plain strings. Items reference them by name (not by
-index or id), so **renaming a section requires rewriting every item's `section` field**.
-Items whose `section` is `''` render first under an "Unsectioned Items" header.
-
-### Rendering
-
-Tables are rebuilt wholesale by assigning a concatenated HTML string to
-`tbody.innerHTML`. Rows carry `data-item-index` and inline editing swaps a row's
-`innerHTML` for `<input>` fields. Note that values are interpolated into HTML without
-escaping — a description containing `"` or `<` will corrupt the row markup. Preserve the
-existing `data-item-index` lookup pattern (rows are not in array order once sections are
-in play, so `rows[i]` is not `items[i]`).
+Every collection scopes to `@request.auth.company` via PocketBase API rules. Queries also
+filter by company client-side — belt and braces, so a misconfigured rule shows nothing
+rather than another company's data. **Any new collection needs its API rules set**;
+PocketBase defaults to locked, so a missing rule fails closed.
 
 ## Business rules
 
-- **VAT is 20%**, hardcoded as `subtotal * 0.20` in eight places across five files. Each
-  tool has a "Remove VAT" checkbox (`removeVat` / `invoiceRemoveVat` /
-  `statementRemoveVat`) that zeroes it.
-- **Default deposit is 30%** (estimate only).
-- **Trade rates** are labelled "Edinburgh 2025 standard trade rates". A rate of `0` means
-  "no standard rate, user must type one" and is omitted from the rate hint.
-- **Rate types** are `hourly` / `daily` / `job` / `custom`; `job` is the default.
-  Selecting a trade auto-fills the unit price for the current rate type.
-- **Customer IDs** are generated client-side from the name: first 3 chars of first name +
-  first 3 of last name + a random 4-digit number (`JOHSMI4821`). Single-word names use
-  the first 6 chars. They are not stable or unique — regenerating gives a different ID.
-- **Document numbers** are 4-digit zero-padded and stored in `localStorage`:
-  `traderBrosEstimateCount`, `traderBrosInvoiceCount`, `traderBrosStatementCount`. The
-  stored value is the *last used* number; the displayed "next" number is stored + 1. It
-  is incremented **only on successful PDF download**, not on preview. This is the only
-  persisted state in the app — nothing else survives a reload.
+- **VAT is 20%**, defined once as `VAT_RATE` in `src/lib/money.js` and defaulted in the
+  hooks. Per-company override via `companies.vat_rate`; per-document via
+  `documents.remove_vat`.
+- **Deposit defaults to 30%** (estimates only), calculated on the VAT-inclusive total.
+- **Deductions apply after VAT** (invoices only).
 - Estimates expire in 30 days, statements in 31.
-- Company contact details, bank details, and terms are hardcoded into each PDF/preview
-  HTML template. There is no shared config object — changing the phone number means
-  editing every generator file.
+- **Trade rates** are "Edinburgh 2025 standard". A rate of `0` means "no standard rate";
+  it's omitted from the hint.
+- Document numbers are 4-digit zero-padded, per company **and** per type.
+
+## Conventions
+
+- **Modern JS**: ES modules, `const`/`let`, arrow functions, async/await. The legacy ES5
+  style (`var`, globals, inline `onclick`) is confined to `legacy/`.
+- **Escape everything** interpolated into template HTML via `escapeHtml` /
+  `escapeMultiline` in `src/lib/format.js`. Document text now comes from a shared
+  database, so unescaped interpolation is a stored-XSS vector, not just a broken row.
+- **Errors** surface through `errorMessage(err)` into an `.error-banner`. Don't use
+  `alert()` / `confirm()` in new code — `window.prompt` survives in `SectionManager` only.
+- **Currency** via `money()`; dates via `formatDate` (en-GB).
+- PocketBase filters use `pb.filter()` with bound parameters, never string concatenation.
 
 ## PDF generation
 
-PDFs are produced by POSTing a **complete standalone HTML document** to the
-[PDFShift](https://pdfshift.io) API (`https://api.pdfshift.io/v3/convert/pdf`), which
-returns a PDF blob that is downloaded via a synthetic `<a download>` click.
+The browser renders HTML from `template.js` and POSTs it to `/api/omega/render-pdf`.
+That route (`pocketbase/pb_hooks/pdf.pb.js`) authenticates the caller, checks the document
+belongs to their company, forwards to Gotenberg on the private Docker network, archives
+the PDF against the document, and returns the file.
 
-Each tool therefore maintains **two separate copies of its document markup**:
+Gotenberg is **not** published — no host port. The old PDFShift integration and its
+committed API key are gone; nothing secret reaches the browser now.
 
-- `preview*()` builds inline HTML for the on-page modal (`.class-preview` suffixed CSS).
-- `generate*HTML()` builds the full `<!DOCTYPE html>` document sent to PDFShift.
+Note the direction of travel: HTML is rendered client-side deliberately, to keep one
+template. Phase 5's unattended deposit-invoice email needs a server-side render — share
+this template through the JSVM rather than writing a second one.
 
-**These are not shared.** A visual change must be applied to both, or the preview and the
-downloaded PDF will disagree. This is the most common source of bugs in this codebase.
+## Testing
 
-Two stylistic variants exist for building that markup: `pdf_generator.js` and
-`invoice_pdfgen.js` use ES6 template literals; `statement_pdfgen.js` uses single-quoted
-strings with trailing backslash line continuations. Match the file you are editing.
+`npm test` runs `test/smoke.mjs` — no framework, no dependencies. It covers the totals
+maths (VAT, remove-VAT, post-VAT deduction, deposit), HTML escaping, and the
+preview/PDF-parity invariant. **Add a case here when you touch money or the template.**
 
-### The PDFShift key
+Beyond that, verification is manual:
 
-A live PDFShift API key is committed to this repository — as a named constant in
-`pdf_generator.js:2` and inline in the `fetch` calls in `invoice_pdfgen.js:278` and
-`statement_pdfgen.js:423`. It is served to every visitor in plain JavaScript, so it is
-already public and should be treated as compromised.
-
-Do not copy it into new files. If asked to touch PDF generation, prefer reading the
-shared `PDFSHIFT_API_KEY` constant, and flag to the user that the key should be rotated
-and moved behind a server-side proxy. The free tier is 250 PDFs/month; a `429` means the
-quota is spent.
-
-## Import / export
-
-Three interchange paths exist, and they use **different formats** — don't conflate them.
-
-**1. `.tbdata.json` export** — `exportEstimateItems()` (and the missing
-`exportInvoiceItems()`) download `{ source, number, items, sections }`. The Statement
-tool's `importStatementJson()` reads these and **appends** to existing items.
-
-**2. Embedded payload in estimate PDFs** — `generateCompleteHTML()` appends a
-near-invisible 4pt `#f5f5f5` div containing:
-
-```
-OMEGA_IMPORT_V1_START<base64 of encodeURIComponent(JSON)>OMEGA_IMPORT_V1_END
-```
-
-`decodeOmegaImportPayload()` pulls this back out of extracted PDF text.
-`applyEstimateImportData()` **replaces** all items and sections (after a `confirm()`).
-Only the estimate tool writes and reads this format.
-
-**3. Positional PDF scraping** — `parseTbPdfItems()` in `statement.js` reconstructs items
-from pdf.js text runs when no embedded payload exists, grouping by y-coordinate with a
-5-unit tolerance and detecting category/section headers via bold `fontName`. It is
-tightly coupled to the generated PDF layout: **changing table markup, column order, the
-`Description Qty Unit price Total price` header row, or the bold styling of section rows
-will break it.** The existing comments there document hard-won fixes (per-page y-offsets,
-`normalizeCategoryText()` absorbing Chromium's text-run splitting) — read them before
-touching that code.
-
-## Code conventions
-
-Match the surrounding style; it is consistent and deliberately old-fashioned.
-
-- **ES5 style**: `var` everywhere, `function` declarations, classic `for` loops, no
-  arrow functions in the tool logic, no `class`, no modules. (A few `async`/`await` and
-  template literals appear in `pdf_generator.js`; that is the exception.)
-- **Global scope**: every function and variable is a global. New tool functions must be
-  globals too, because HTML `onclick` attributes resolve against `window`.
-- **Event wiring**: interaction is inline `onclick=` / `onchange=` in `index.html`.
-  `addEventListener` is used only for input listeners, rate-type buttons, and drag-drop
-  zones, registered at script load. Keep new buttons consistent with the file you're in.
-- **User interaction** is `alert()` / `confirm()` / `prompt()`. There is no toast or
-  validation-message system; don't introduce one incidentally.
-- **Currency** is formatted `'£' + n.toFixed(2)` inline. Dates use `en-GB`.
-- The three `download*()` functions read the implicit global `event` to find the button
-  they were called from (`var downloadBtn = event.target`). This only works because they
-  are invoked directly from an inline handler — do not call them programmatically or
-  refactor the call sites without passing the button through.
+1. Sign in → dashboard loads with stats.
+2. Create a customer; confirm the reference is generated and persists on reload.
+3. Raise an estimate; confirm it gets the next number.
+4. Pick a trade; confirm the rate hint appears and price auto-fills; toggle rate types.
+5. Add sections and items; confirm grouping, with unsectioned first.
+6. Edit a row inline; confirm the line total and the document total both update.
+7. Toggle Remove VAT; confirm the VAT row disappears and the total drops.
+8. Preview, then download; confirm they match.
+9. Mark sent → mark won → raise the deposit invoice; confirm it links to the estimate.
+10. Open the pipeline; confirm the estimate is in the right column with the right value.
 
 ## Known gaps
 
-**`invoice.js` is an empty file (1 byte).** It was committed as a placeholder and never
-filled in, so the Invoice tool is non-functional: its state layer does not exist
-anywhere in the repo. `invoice_pdfgen.js` references `invoiceItems`, `invoiceSections`,
-and `invoiceNumber`, none of which are ever declared, and these handlers wired up in
-`index.html` are undefined:
+- **PDF import is not ported.** `legacy/statement.js` (`parseTbPdfItems`) reconstructs
+  line items from PDF text by position — it keys off the exact
+  `Description Qty Unit price Total price` header, column order, and bold category/section
+  rows. `template.js` reproduces that layout faithfully so historical PDFs remain
+  parseable, but nothing in the new app calls the parser yet.
+- **No service worker**, so the PWA manifest doesn't make it installable/offline yet.
+- **Phase 5 not built**: deposit-invoice *email*, signed accept/decline links (the
+  `public_token` field exists and is populated), and Capacitor packaging.
+- **`react-router-dom` carries an open advisory** with no patched release — the
+  high-severity item is SSR-hydration-specific and this is a client-only SPA. Recheck
+  when a fix ships.
+- Company logo is still hotlinked from GitHub `?raw=true`; move it into PocketBase
+  storage so PDFs don't depend on GitHub being up.
 
-- `addInvoiceItem()`, `updateInvoiceTable()`, `addInvoiceSection()`
-- `editInvoiceNumber()`, `exportInvoiceItems()`, `closeInvoicePreview()`
+## Legacy
 
-Also missing: the invoice client-name → customer-ID listener, the trade-category change
-handler, the `.invoice-rate-btn` rate-type wiring, and inline row edit/move/delete
-functions. Clicking anything in the Invoice tool throws a `ReferenceError`.
+`legacy/` holds the original static app: three copy-pasted tool files, two PDF
+generators, an empty `invoice.js` (the Invoice tool never worked), and a committed
+PDFShift key. It is not served or built. Keep it until the PDF importer is ported, then
+delete it — git history has it.
 
-If asked to fix or extend the Invoice tool, the intended approach is to write
-`invoice.js` as a mirror of `script.js` using the `invoice*` names in the table above,
-plus the invoice-only fields (`paymentDueDays`, `paymentStatus`, `invoiceDeduction` —
-note the deduction applies *after* VAT).
-
-Smaller issues worth knowing: no service worker despite the PWA manifest; the matrix
-canvas `setInterval` in `index.html` runs forever even once hidden; logo and icon assets
-are hotlinked from GitHub `?raw=true` URLs, so the app requires network access to render
-correctly.
-
-## Manual test checklist
-
-After changing tool logic, exercise at least this path in a browser:
-
-1. Enter The Matrix → dashboard → open the tool you changed.
-2. Type a client name; confirm the Customer ID auto-fills.
-3. Pick a trade category; confirm the standard-rate hint appears and the unit price
-   auto-fills. Toggle hourly/day/job and confirm the price and label update.
-4. Add two sections, add items into each, and confirm they group correctly under their
-   headers with unsectioned items first.
-5. Edit a row inline, save, and confirm the line total and subtotal both update.
-6. Toggle "Remove VAT" and confirm the VAT row disappears and the total drops by 20%.
-7. Preview, then download the PDF — confirm they look the same and the counter advances
-   only after the download.
-8. Re-import the downloaded PDF into the Statement tool and confirm items, categories,
-   sections, and client info all come back intact.
+**That key must be treated as compromised** and rotated at PDFShift regardless; it was
+public in the repo. Nothing in the new code path uses it.
 
 ## Git workflow
 
-Development happens on feature branches; push with `git push -u origin <branch>`. Do not
-open a pull request unless explicitly asked. Commit messages in the existing history are
-terse ("Create script.js"); write clearer ones than that.
+Feature branches; push with `git push -u origin <branch>`. Do not open a pull request
+unless explicitly asked.

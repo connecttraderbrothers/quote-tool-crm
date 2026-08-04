@@ -1,0 +1,281 @@
+[
+  {
+    "id": "_pb_users_auth_",
+    "name": "users",
+    "type": "auth",
+    "system": false,
+    "listRule": "@request.auth.id != '' && company = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && company = @request.auth.company",
+    "createRule": null,
+    "updateRule": "id = @request.auth.id || (@request.auth.role = 'owner' && company = @request.auth.company)",
+    "deleteRule": "@request.auth.role = 'owner' && company = @request.auth.company",
+    "fields": [
+      { "name": "full_name", "type": "text", "required": true, "max": 120 },
+      { "name": "company", "type": "relation", "required": true, "collectionId": "pbc_companies01", "cascadeDelete": false, "maxSelect": 1 },
+      { "name": "role", "type": "select", "required": true, "maxSelect": 1, "values": ["owner", "admin", "staff"] },
+      { "name": "phone", "type": "text", "max": 40 },
+      { "name": "active", "type": "bool" }
+    ],
+    "indexes": ["CREATE INDEX idx_users_company ON users (company)"]
+  },
+
+  {
+    "id": "pbc_companies01",
+    "name": "companies",
+    "type": "base",
+    "listRule": "@request.auth.id != '' && id = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && id = @request.auth.company",
+    "createRule": null,
+    "updateRule": "@request.auth.role = 'owner' && id = @request.auth.company",
+    "deleteRule": null,
+    "fields": [
+      { "name": "name", "type": "text", "required": true, "max": 160 },
+      { "name": "address_line1", "type": "text", "max": 160 },
+      { "name": "address_line2", "type": "text", "max": 160 },
+      { "name": "phone", "type": "text", "max": 40 },
+      { "name": "email", "type": "email" },
+      { "name": "vat_number", "type": "text", "max": 40 },
+      { "name": "vat_registered", "type": "bool" },
+      { "name": "vat_rate", "type": "number", "min": 0, "max": 1 },
+      { "name": "logo_url", "type": "url" },
+      { "name": "bank_account_name", "type": "text", "max": 120 },
+      { "name": "bank_sort_code", "type": "text", "max": 12 },
+      { "name": "bank_account_number", "type": "text", "max": 20 },
+      { "name": "default_deposit_percent", "type": "number", "min": 0, "max": 100 },
+      { "name": "default_payment_due_days", "type": "number", "min": 0, "max": 365 }
+    ]
+  },
+
+  {
+    "id": "pbc_customers01",
+    "name": "customers",
+    "type": "base",
+    "listRule": "@request.auth.id != '' && company = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && company = @request.auth.company",
+    "createRule": "@request.auth.id != '' && company = @request.auth.company",
+    "updateRule": "@request.auth.id != '' && company = @request.auth.company",
+    "deleteRule": "@request.auth.role != 'staff' && company = @request.auth.company",
+    "fields": [
+      { "name": "company", "type": "relation", "required": true, "collectionId": "pbc_companies01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "ref", "type": "text", "required": true, "max": 20 },
+      { "name": "name", "type": "text", "required": true, "max": 160 },
+      { "name": "phone", "type": "text", "max": 40 },
+      { "name": "email", "type": "email" },
+      { "name": "address", "type": "text", "max": 300 },
+      { "name": "postcode", "type": "text", "max": 16 },
+      { "name": "notes", "type": "text", "max": 4000 },
+      { "name": "archived", "type": "bool" }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_customers_company ON customers (company)",
+      "CREATE UNIQUE INDEX idx_customers_ref ON customers (company, ref)",
+      "CREATE INDEX idx_customers_name ON customers (company, name)"
+    ]
+  },
+
+  {
+    "id": "pbc_projects001",
+    "name": "projects",
+    "type": "base",
+    "listRule": "@request.auth.id != '' && company = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && company = @request.auth.company",
+    "createRule": "@request.auth.id != '' && company = @request.auth.company",
+    "updateRule": "@request.auth.id != '' && company = @request.auth.company",
+    "deleteRule": "@request.auth.role != 'staff' && company = @request.auth.company",
+    "fields": [
+      { "name": "company", "type": "relation", "required": true, "collectionId": "pbc_companies01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "customer", "type": "relation", "required": true, "collectionId": "pbc_customers01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "name", "type": "text", "required": true, "max": 160 },
+      { "name": "address", "type": "text", "max": 300 },
+      { "name": "postcode", "type": "text", "max": 16 },
+      { "name": "status", "type": "select", "maxSelect": 1, "values": ["lead", "quoted", "active", "on_hold", "complete", "cancelled"] },
+      { "name": "starts_on", "type": "date" },
+      { "name": "notes", "type": "text", "max": 4000 }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_projects_company ON projects (company)",
+      "CREATE INDEX idx_projects_customer ON projects (customer)"
+    ]
+  },
+
+  {
+    "id": "pbc_documents01",
+    "name": "documents",
+    "type": "base",
+    "listRule": "@request.auth.id != '' && company = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && company = @request.auth.company",
+    "createRule": "@request.auth.id != '' && company = @request.auth.company",
+    "updateRule": "@request.auth.id != '' && company = @request.auth.company",
+    "deleteRule": "@request.auth.role != 'staff' && company = @request.auth.company",
+    "fields": [
+      { "name": "company", "type": "relation", "required": true, "collectionId": "pbc_companies01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "customer", "type": "relation", "required": true, "collectionId": "pbc_customers01", "cascadeDelete": false, "maxSelect": 1 },
+      { "name": "project", "type": "relation", "collectionId": "pbc_projects001", "cascadeDelete": false, "maxSelect": 1 },
+      { "name": "type", "type": "select", "required": true, "maxSelect": 1, "values": ["estimate", "invoice", "statement"] },
+      { "name": "number", "type": "number", "required": true, "min": 1 },
+      { "name": "status", "type": "select", "required": true, "maxSelect": 1, "values": ["draft", "sent", "accepted", "declined", "no_reply", "expired", "part_paid", "paid"] },
+
+      { "name": "parent_document", "type": "relation", "collectionId": "pbc_documents01", "cascadeDelete": false, "maxSelect": 1 },
+      { "name": "is_deposit", "type": "bool" },
+      { "name": "deposit_percent", "type": "number", "min": 0, "max": 100 },
+
+      { "name": "site_address", "type": "text", "max": 300 },
+      { "name": "site_postcode", "type": "text", "max": 16 },
+
+      { "name": "remove_vat", "type": "bool" },
+      { "name": "vat_rate", "type": "number", "min": 0, "max": 1 },
+      { "name": "deduction", "type": "number", "min": 0 },
+      { "name": "payment_due_days", "type": "number", "min": 0, "max": 365 },
+      { "name": "notes", "type": "text", "max": 8000 },
+
+      { "name": "subtotal", "type": "number", "min": 0 },
+      { "name": "vat_amount", "type": "number", "min": 0 },
+      { "name": "total", "type": "number", "min": 0 },
+      { "name": "amount_due", "type": "number" },
+
+      { "name": "issued_at", "type": "date" },
+      { "name": "expires_at", "type": "date" },
+      { "name": "sent_at", "type": "date" },
+      { "name": "responded_at", "type": "date" },
+
+      { "name": "pdf", "type": "file", "maxSelect": 1, "maxSize": 10485760, "mimeTypes": ["application/pdf"] },
+      { "name": "snapshot", "type": "json", "maxSize": 2000000 },
+      { "name": "public_token", "type": "text", "max": 64 },
+      { "name": "created_by", "type": "relation", "collectionId": "_pb_users_auth_", "cascadeDelete": false, "maxSelect": 1 }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_documents_company ON documents (company)",
+      "CREATE INDEX idx_documents_customer ON documents (customer)",
+      "CREATE INDEX idx_documents_status ON documents (company, type, status)",
+      "CREATE UNIQUE INDEX idx_documents_number ON documents (company, type, number)",
+      "CREATE UNIQUE INDEX idx_documents_token ON documents (public_token)"
+    ]
+  },
+
+  {
+    "id": "pbc_docsects001",
+    "name": "document_sections",
+    "type": "base",
+    "listRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "createRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "updateRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "deleteRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "fields": [
+      { "name": "document", "type": "relation", "required": true, "collectionId": "pbc_documents01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "name", "type": "text", "required": true, "max": 120 },
+      { "name": "sort_order", "type": "number", "required": true, "min": 0 }
+    ],
+    "indexes": ["CREATE INDEX idx_sections_document ON document_sections (document, sort_order)"]
+  },
+
+  {
+    "id": "pbc_docitems001",
+    "name": "document_items",
+    "type": "base",
+    "listRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "createRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "updateRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "deleteRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "fields": [
+      { "name": "document", "type": "relation", "required": true, "collectionId": "pbc_documents01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "section", "type": "relation", "collectionId": "pbc_docsects001", "cascadeDelete": false, "maxSelect": 1 },
+      { "name": "category", "type": "text", "required": true, "max": 80 },
+      { "name": "description", "type": "text", "required": true, "max": 600 },
+      { "name": "quantity", "type": "number", "required": true, "min": 0 },
+      { "name": "unit", "type": "text", "max": 40 },
+      { "name": "unit_price", "type": "number", "required": true, "min": 0 },
+      { "name": "line_total", "type": "number", "min": 0 },
+      { "name": "sort_order", "type": "number", "required": true, "min": 0 }
+    ],
+    "indexes": ["CREATE INDEX idx_items_document ON document_items (document, sort_order)"]
+  },
+
+  {
+    "id": "pbc_people00001",
+    "name": "people",
+    "type": "base",
+    "listRule": "@request.auth.id != '' && company = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && company = @request.auth.company",
+    "createRule": "@request.auth.role != 'staff' && company = @request.auth.company",
+    "updateRule": "@request.auth.role != 'staff' && company = @request.auth.company",
+    "deleteRule": "@request.auth.role = 'owner' && company = @request.auth.company",
+    "fields": [
+      { "name": "company", "type": "relation", "required": true, "collectionId": "pbc_companies01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "type", "type": "select", "required": true, "maxSelect": 1, "values": ["employee", "subcontractor"] },
+      { "name": "name", "type": "text", "required": true, "max": 160 },
+      { "name": "trade", "type": "text", "max": 80 },
+      { "name": "phone", "type": "text", "max": 40 },
+      { "name": "email", "type": "email" },
+      { "name": "day_rate", "type": "number", "min": 0 },
+      { "name": "hourly_rate", "type": "number", "min": 0 },
+      { "name": "utr", "type": "text", "max": 20 },
+      { "name": "insurance_expiry", "type": "date" },
+      { "name": "notes", "type": "text", "max": 4000 },
+      { "name": "active", "type": "bool" }
+    ],
+    "indexes": ["CREATE INDEX idx_people_company ON people (company, type)"]
+  },
+
+  {
+    "id": "pbc_payments001",
+    "name": "payments",
+    "type": "base",
+    "listRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "createRule": "@request.auth.id != '' && document.company = @request.auth.company",
+    "updateRule": "@request.auth.role != 'staff' && document.company = @request.auth.company",
+    "deleteRule": "@request.auth.role != 'staff' && document.company = @request.auth.company",
+    "fields": [
+      { "name": "document", "type": "relation", "required": true, "collectionId": "pbc_documents01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "amount", "type": "number", "required": true, "min": 0 },
+      { "name": "method", "type": "select", "maxSelect": 1, "values": ["bank_transfer", "card", "cash", "cheque", "other"] },
+      { "name": "paid_at", "type": "date", "required": true },
+      { "name": "reference", "type": "text", "max": 120 },
+      { "name": "notes", "type": "text", "max": 1000 }
+    ],
+    "indexes": ["CREATE INDEX idx_payments_document ON payments (document)"]
+  },
+
+  {
+    "id": "pbc_activity001",
+    "name": "activity",
+    "type": "base",
+    "listRule": "@request.auth.id != '' && company = @request.auth.company",
+    "viewRule": "@request.auth.id != '' && company = @request.auth.company",
+    "createRule": "@request.auth.id != '' && company = @request.auth.company",
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      { "name": "company", "type": "relation", "required": true, "collectionId": "pbc_companies01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "customer", "type": "relation", "collectionId": "pbc_customers01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "document", "type": "relation", "collectionId": "pbc_documents01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "kind", "type": "text", "required": true, "max": 60 },
+      { "name": "summary", "type": "text", "max": 400 },
+      { "name": "meta", "type": "json", "maxSize": 200000 },
+      { "name": "actor", "type": "relation", "collectionId": "_pb_users_auth_", "cascadeDelete": false, "maxSelect": 1 }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_activity_company ON activity (company, created)",
+      "CREATE INDEX idx_activity_customer ON activity (customer)"
+    ]
+  },
+
+  {
+    "id": "pbc_counters001",
+    "name": "document_counters",
+    "type": "base",
+    "listRule": null,
+    "viewRule": null,
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      { "name": "company", "type": "relation", "required": true, "collectionId": "pbc_companies01", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "type", "type": "select", "required": true, "maxSelect": 1, "values": ["estimate", "invoice", "statement"] },
+      { "name": "last_number", "type": "number", "required": true, "min": 0 }
+    ],
+    "indexes": ["CREATE UNIQUE INDEX idx_counters ON document_counters (company, type)"]
+  }
+]

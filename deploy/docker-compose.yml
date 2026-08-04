@@ -1,0 +1,64 @@
+# OMEGA backend — PocketBase + Gotenberg.
+#
+# Deploy this as a Docker Compose resource in Coolify. Only PocketBase is
+# published; Gotenberg stays on the internal network with no host port, so the
+# renderer is unreachable from the internet.
+#
+# ARM WARNING: Oracle's Always Free tier is Ampere (arm64). Both images below
+# publish arm64 builds. If you add any other service, check its architecture
+# before deploying or it will fail to start with a confusing exec-format error.
+
+services:
+  pocketbase:
+    # Pin the version. PocketBase has shipped breaking changes between minor
+    # releases; read the changelog before bumping this.
+    image: ghcr.io/muchobien/pocketbase:0.22.21
+    restart: unless-stopped
+    environment:
+      # Where the PDF hook sends HTML. Internal DNS name, not published.
+      GOTENBERG_URL: http://gotenberg:3000
+    volumes:
+      # pb_data holds the SQLite database and uploaded PDFs. This is the volume
+      # that matters — see the backup section in deploy/README.md.
+      - pocketbase_data:/pb_data
+      # Hooks are mounted read-only from the repo, so a `git push` plus a
+      # Coolify redeploy is all it takes to ship a server-side change.
+      - ../pocketbase/pb_hooks:/pb_hooks:ro
+    ports:
+      # Coolify terminates TLS and proxies to this port. Bind to localhost so
+      # the container is not directly reachable on the public interface.
+      - "127.0.0.1:8090:8090"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8090/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      - gotenberg
+
+  gotenberg:
+    # Replaces PDFShift. Headless Chromium behind a small HTTP API.
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    command:
+      - "gotenberg"
+      # The document template is static HTML/CSS — no script needed. Turning
+      # JavaScript off removes a whole class of injection risk from rendering
+      # HTML that originated in a browser.
+      - "--chromium-disable-javascript=true"
+      # Block local and private-network fetches so a crafted document cannot be
+      # used to probe the VM or reach PocketBase's admin API (SSRF). Remote
+      # https assets — the company logo — still load.
+      - "--chromium-deny-list=^file:///[^tmp].*|^https?://(127\\.|10\\.|172\\.1[6-9]\\.|172\\.2[0-9]\\.|172\\.3[01]\\.|192\\.168\\.|localhost|\\[::1\\])"
+      - "--api-timeout=60s"
+    # Deliberately no `ports:` — reachable only from pocketbase on the internal
+    # network. Nothing outside Docker can make it render anything.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  pocketbase_data:
