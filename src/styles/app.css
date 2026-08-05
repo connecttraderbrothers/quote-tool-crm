@@ -185,6 +185,13 @@ tbody tr:hover { background: var(--surface-2); }
 .auth-card { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
 .auth-brand { text-align: center; font-size: 30px; font-weight: 700; letter-spacing: 6px; color: var(--gold); margin-bottom: 4px; }
 .auth-tag { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+.auth-preset {
+  margin-top: 20px; padding: 14px; border: 1px dashed var(--gold-dim);
+  border-radius: 8px; background: rgba(212,175,55,0.06); font-size: 13px;
+}
+.auth-preset strong { color: var(--gold); display: block; margin-bottom: 8px; }
+.auth-preset-creds { display: flex; flex-direction: column; gap: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+.auth-preset-note { margin-top: 10px; font-size: 12px; color: var(--muted); line-height: 1.45; }
 
 /* ── Misc ───────────────────────────────────────────────────────────────── */
 

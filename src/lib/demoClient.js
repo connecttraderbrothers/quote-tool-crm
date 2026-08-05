@@ -1,23 +1,30 @@
-// An in-memory stand-in for the PocketBase client, used when VITE_DEMO=true.
+// An in-memory stand-in for the PocketBase client — standalone mode.
 //
-// The shim sits at the `pb` seam, so everything above it — every screen, the
-// document template, the totals maths, the pipeline — is the real code running
-// against fake records. Nothing in the app branches on "am I in demo mode".
+// Active when VITE_DEMO=true, including in production builds, so the app can be
+// deployed to a static host like Vercel with no backend at all. The shim sits at
+// the `pb` seam, so everything above it — every screen, the document template,
+// the totals maths, the pipeline — is the real code running against fake
+// records. Nothing in the app branches on "am I in standalone mode".
 //
-// SAFETY: this module throws if it is ever loaded in a production build. Demo
-// mode is a development convenience and must never be what a deployed app talks
-// to, because it has no authentication at all.
+// WHAT THIS IS AND ISN'T:
+//   - It is a complete, working demonstration of the CRM with a real login.
+//   - It is NOT secure, and does not pretend to be. The admin credentials are
+//     compiled into the JavaScript bundle, so anyone who loads the page can
+//     read them and sign in. That is acceptable precisely because there is
+//     nothing here to steal: this client never contacts PocketBase, so the only
+//     data behind the login is the fixture data in demoData.js.
+//   - The moment you point the app at a real PocketBase (VITE_PB_URL, with
+//     VITE_DEMO unset), this file is not loaded at all and the built-in account
+//     does not exist. Real accounts come from scripts/seed-admin.mjs.
 //
 // It also mirrors the parts of pocketbase/pb_hooks/main.pb.js that the UI would
 // otherwise appear to get wrong — deriving line_total, recomputing document
-// totals, and allocating numbers. That is a deliberate duplication for the demo
-// only; the server remains the real authority.
+// totals, and allocating numbers. That is a deliberate duplication for
+// standalone mode only; the server remains the real authority.
 
-import { seedStore, DEMO_USER } from './demoData.js';
+import { seedStore, DEMO_USER, ADMIN_EMAIL, ADMIN_PASSWORD } from './demoData.js';
 
-if (import.meta.env.PROD) {
-  throw new Error('Demo mode cannot be used in a production build.');
-}
+const SESSION_KEY = 'omega_demo_session';
 
 const DEFAULT_VAT_RATE = 0.2;
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
@@ -256,36 +263,53 @@ function collection(name) {
       return true;
     },
 
-    async authWithPassword(email) {
-      const record = { ...DEMO_USER, email: email || DEMO_USER.email };
-      authStore.save('demo-token', record);
-      return { token: 'demo-token', record };
+    async authWithPassword(email, password) {
+      const emailMatches = String(email || '').trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+      if (!emailMatches || password !== ADMIN_PASSWORD) {
+        const error = new Error('Failed to authenticate.');
+        error.response = { data: { identity: { message: 'Invalid email or password.' } } };
+        throw error;
+      }
+      authStore.save('demo-token', DEMO_USER);
+      return { token: 'demo-token', record: DEMO_USER };
     },
 
-    async authRefresh(options = {}) {
-      return { token: 'demo-token', record: applyExpand(DEMO_USER, options.expand) ?? DEMO_USER };
+    async authRefresh() {
+      if (!authStore.record) throw new Error('Not signed in.');
+      return { token: 'demo-token', record: DEMO_USER };
     },
   };
 }
 
 // ── Auth store ──────────────────────────────────────────────────────────────
 //
-// Signed in from the start — that is the entire point of demo mode.
+// Starts signed out so the real login screen is shown, then persists to
+// sessionStorage so a page refresh doesn't kick you back out.
 
 const listeners = new Set();
 
+function restoreSession() {
+  try {
+    return window.sessionStorage.getItem(SESSION_KEY) ? DEMO_USER : null;
+  } catch {
+    return null; // storage blocked (private mode) — just start signed out
+  }
+}
+
 const authStore = {
-  token: 'demo-token',
-  record: DEMO_USER,
+  token: '',
+  record: restoreSession(),
   get isValid() { return !!this.record; },
   save(token, record) {
     this.token = token;
     this.record = record;
+    try { window.sessionStorage.setItem(SESSION_KEY, '1'); } catch { /* ignore */ }
     listeners.forEach((fn) => fn(token, record));
   },
   clear() {
     this.token = '';
     this.record = null;
+    try { window.sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
     listeners.forEach((fn) => fn('', null));
   },
   onChange(callback) {
@@ -293,6 +317,8 @@ const authStore = {
     return () => listeners.delete(callback);
   },
 };
+
+authStore.token = authStore.record ? 'demo-token' : '';
 
 // ── Client ──────────────────────────────────────────────────────────────────
 

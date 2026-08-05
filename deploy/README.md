@@ -168,19 +168,43 @@ on that one disk.
 
 ---
 
-## Just want to look at it first?
+## Running it right now, with no backend
 
-You don't need any of the above to see the app running:
+You don't need any of the above:
 
 ```bash
 npm install
-npm run demo
+npm run dev
 ```
 
-That starts on `http://localhost:5173` already signed in, with sample customers,
-estimates across the pipeline, and a paid deposit invoice. No PocketBase, no VM,
-no login. It is dev-only and holds everything in memory — a refresh resets it,
-and it cannot be built for production.
+Open `http://localhost:5173` and sign in with the built-in administrator:
+
+```
+trader@brothers.local
+admin123
+```
+
+The login screen pre-fills it. You get sample customers, estimates across the
+pipeline, and a paid deposit invoice. Everything is held in memory, so a refresh
+resets it and nothing is saved.
+
+### Deploying that to Vercel
+
+`vercel.json` is already configured — import the repo and deploy. It builds with
+`npm run build:demo` and rewrites all routes to `index.html` so deep links like
+`/pipeline` work.
+
+Two things to be clear about:
+
+- **Vercel cannot host PocketBase.** It runs static frontends and short-lived
+  serverless functions; PocketBase is a long-running Go process with a SQLite
+  file on disk. A Vercel deploy is therefore always standalone. The real backend
+  goes on the Oracle VM, per the rest of this document.
+- **The built-in credentials are public.** They are compiled into the JavaScript,
+  so anyone who opens the URL can read them and sign in. That is fine while it is
+  sample data and nothing else — do not put a real customer into a Vercel
+  deployment. Once the PocketBase backend exists, build with `npm run build`
+  instead, which strips the built-in account from the bundle entirely.
 
 ## Local development
 

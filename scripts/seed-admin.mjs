@@ -23,7 +23,7 @@
 import PocketBase from 'pocketbase';
 
 const PB_URL = process.env.PB_URL || 'http://127.0.0.1:8090';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@traderbrothers.local';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'trader@brothers.local';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const COMPANY_NAME = process.env.COMPANY_NAME || 'Trader Brothers Ltd';
 
@@ -43,14 +43,17 @@ function fail(message) {
   process.exit(1);
 }
 
-if (!isLocal(PB_URL) && WEAK.has(ADMIN_PASSWORD.toLowerCase())) {
-  fail(
-    `Refusing to create an account with the password "${ADMIN_PASSWORD}" on ${PB_URL}.\n\n` +
-    '  That server is not localhost, so this login would be reachable from the\n' +
-    '  internet by anyone who guesses it — along with every customer address and\n' +
-    '  phone number in the database.\n\n' +
-    '  Set a real password and run again:\n\n' +
-    `    ADMIN_PASSWORD='$(openssl rand -base64 18)' npm run seed:admin\n`
+const weakOnRemote = !isLocal(PB_URL) && WEAK.has(ADMIN_PASSWORD.toLowerCase());
+
+if (weakOnRemote) {
+  // Your system, your call — this proceeds. But it says so plainly first,
+  // because the account being created opens every customer address and phone
+  // number in the database to anyone who guesses the password.
+  console.warn(
+    `\n⚠  Creating "${ADMIN_EMAIL}" with the password "${ADMIN_PASSWORD}" on ${PB_URL}.\n` +
+    '   That host is not localhost, so this login is reachable from the internet.\n' +
+    '   Change it once you are past testing:\n\n' +
+    `     ADMIN_PASSWORD='$(openssl rand -base64 18)' npm run seed:admin\n`
   );
 }
 
