@@ -28,13 +28,23 @@ export const DEMO_COMPANY = {
   default_payment_due_days: 30,
 };
 
+// The built-in administrator account.
+//
+// These credentials are compiled into the bundle, so anyone who can load the
+// app can sign in with them. That is fine here and only here: standalone mode
+// never connects to PocketBase, so the only thing behind this login is the
+// sample data below. Never reuse these against a real backend — see
+// scripts/seed-admin.mjs for creating a genuine account.
+export const ADMIN_EMAIL = 'trader@brothers.local';
+export const ADMIN_PASSWORD = 'admin123';
+
 export const DEMO_USER = {
   id: 'demo_user_0001',
   collectionName: 'users',
-  email: 'demo@traderbrothers.local',
-  full_name: 'Demo User',
+  email: ADMIN_EMAIL,
+  full_name: 'Administrator',
   company: DEMO_COMPANY.id,
-  role: 'owner',
+  role: 'owner', // full access — every screen and action is unlocked
   active: true,
   expand: { company: DEMO_COMPANY },
 };

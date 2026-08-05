@@ -5,9 +5,11 @@
   "type": "module",
   "description": "OMEGA — CRM and document tool for Trader Brothers Ltd",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --mode demo",
+    "dev:pb": "vite",
     "demo": "vite --mode demo",
     "build": "vite build",
+    "build:demo": "vite build --mode demo",
     "preview": "vite preview --port 4173",
     "seed:admin": "node scripts/seed-admin.mjs",
     "test": "node test/smoke.mjs"

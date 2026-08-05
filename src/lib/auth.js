@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { pb } from './pb.js';
+import { pb, IS_DEMO } from './pb.js';
 
 /**
  * Current signed-in user, kept in sync with the PocketBase auth store.
@@ -45,6 +45,16 @@ export function useAuth() {
 
 export async function login(email, password) {
   return pb.collection('users').authWithPassword(email, password, { expand: 'company' });
+}
+
+/**
+ * Credentials for the built-in administrator, when running standalone.
+ * Returns null against a real PocketBase — there is no built-in account there.
+ */
+export async function builtInCredentials() {
+  if (!IS_DEMO) return null;
+  const { ADMIN_EMAIL, ADMIN_PASSWORD } = await import('./demoData.js');
+  return { email: ADMIN_EMAIL, password: ADMIN_PASSWORD };
 }
 
 export function logout() {

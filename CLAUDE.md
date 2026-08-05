@@ -28,39 +28,67 @@ original is preserved in `legacy/` — see [Legacy](#legacy).
 
 ```bash
 npm install
-npm run demo     # no backend, no login — sample data in memory
-npm run dev      # Vite on :5173, proxies /api to PocketBase on :8090
-npm run build
-npm test         # smoke test — totals, escaping, template invariants
-npm run seed:admin   # create the first company + owner login in PocketBase
+npm run dev        # standalone — no backend needed. Vite on :5173
+npm run dev:pb     # against a local PocketBase on :8090 (proxied via /api)
+npm run build      # production build for a real PocketBase backend
+npm run build:demo # standalone build (what Vercel deploys)
+npm test           # smoke test — totals, escaping, template invariants
+npm run seed:admin # create the first company + owner login in PocketBase
 
 # PocketBase locally
 ./pocketbase serve --dir ./pocketbase/pb_data --hooksDir ./pocketbase/pb_hooks
 ```
 
-### Demo mode
+### The two modes
 
-`npm run demo` (Vite `--mode demo`, which loads `.env.demo` → `VITE_DEMO=true`)
-swaps the PocketBase client for an in-memory stand-in in `src/lib/demoClient.js`
-and starts signed in. Everything above the `pb` seam is the real code — real
-screens, real template, real totals — so it is a genuine way to work on the UI
-without a server.
+The app runs in one of two modes, decided at **build time** by `VITE_DEMO`.
 
-Two things to keep true when touching it:
+| | Standalone (`VITE_DEMO=true`) | Server (default) |
+| --- | --- | --- |
+| Backend | none — in-memory | PocketBase |
+| Login | built-in account, compiled in | real users collection |
+| Data | fixtures, reset on refresh | SQLite, persisted |
+| PDF | browser print dialog | Gotenberg |
+| Used by | `npm run dev`, Vercel | `npm run dev:pb`, Coolify |
 
-- **It is dev-only by construction.** `IS_DEMO` in `src/lib/pb.js` is
-  `import.meta.env.DEV && VITE_DEMO === 'true'`, a compile-time constant, so the
-  demo client is tree-shaken out of production builds. `demoClient.js` also
-  throws if it is ever evaluated in a `PROD` build. Demo mode has **no
-  authentication at all** — it must never be reachable in a deployed app.
+`IS_DEMO` in `src/lib/pb.js` is a compile-time constant, so **the standalone
+client and every credential in it are tree-shaken out of a server build.** A
+build made with `npm run build` does not contain the built-in account at all —
+verify with `grep trader@brothers.local dist/assets/*.js` after building.
+
+### Standalone mode
+
+`src/lib/demoClient.js` replaces the PocketBase client with an in-memory
+stand-in. Everything above the `pb` seam is the real code — real screens, real
+template, real totals — so it is a genuine demonstration, not a mock-up.
+
+It ships a built-in administrator (`trader@brothers.local` / `admin123`, defined
+in `src/lib/demoData.js`) with the `owner` role. The login screen validates
+against it properly and pre-fills it.
+
+Three things to keep true when touching this:
+
+- **The credentials are public by design.** They are compiled into the bundle;
+  anyone who loads the page can read them. That is acceptable *only* because
+  standalone mode never contacts PocketBase, so the only thing behind the login
+  is fixture data. **Never wire this account into the server path.**
 - **`demoClient.js` mirrors the server hooks** (line totals, document totals,
   numbering) so the UI doesn't appear broken offline. That is a deliberate
-  duplication for the demo only. If you change a rule in
-  `pocketbase/pb_hooks/main.pb.js`, change it here too — or the demo will quietly
-  disagree with production.
+  duplication. If you change a rule in `pocketbase/pb_hooks/main.pb.js`, change
+  it here too, or standalone will quietly disagree with production.
+- **"Download PDF" opens the browser print dialog** with the same HTML, since
+  there is no Gotenberg.
 
-In demo mode "Download PDF" opens the browser print dialog with the same HTML,
-since there is no Gotenberg.
+### Deploying to Vercel
+
+`vercel.json` sets the build command to `npm run build:demo` and rewrites all
+non-asset paths to `index.html` — without that rewrite, loading `/pipeline`
+directly returns a Vercel 404, because React Router owns those paths and no such
+file exists on disk.
+
+Vercel cannot host PocketBase (a long-running Go process with a SQLite file), so
+a Vercel deploy is always standalone. The real backend goes on the Oracle VM —
+see [`deploy/README.md`](deploy/README.md).
 
 Full deployment runbook: [`deploy/README.md`](deploy/README.md).
 

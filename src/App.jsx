@@ -19,7 +19,7 @@ export default function App() {
     <div className="app-shell">
       {IS_DEMO && (
         <div className="demo-banner">
-          Demo mode — sample data, held in memory only. Nothing is saved, and a refresh resets it.
+          Standalone mode — sample data held in memory. Nothing is saved, and a refresh resets it.
         </div>
       )}
       <TopBar user={user} company={company} />
