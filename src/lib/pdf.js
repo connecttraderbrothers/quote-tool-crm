@@ -1,4 +1,4 @@
-import { pb } from './pb.js';
+import { pb, IS_DEMO } from './pb.js';
 import { renderDocument, documentFilename } from '../documents/template.js';
 
 /**
@@ -17,6 +17,14 @@ import { renderDocument, documentFilename } from '../documents/template.js';
 export async function downloadDocumentPdf({ doc, customer, items, sections, company }) {
   const html = renderDocument({ doc, customer, items, sections, company, standalone: true });
 
+  // Demo mode has no Gotenberg. Hand the identical HTML to the browser's own
+  // print dialog instead — "Save as PDF" there produces the same layout, so the
+  // document can still be checked end to end without a backend.
+  if (IS_DEMO) {
+    printHtml(html);
+    return { demo: true };
+  }
+
   const result = await pb.send('/api/omega/render-pdf', {
     method: 'POST',
     body: { documentId: doc.id, html },
@@ -32,6 +40,19 @@ export async function downloadDocumentPdf({ doc, customer, items, sections, comp
 
   triggerDownload(blob, documentFilename(doc, customer));
   return result;
+}
+
+/** Open the rendered document in a print window (demo-mode PDF fallback). */
+function printHtml(html) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    throw new Error('Allow pop-ups for this site to print the document.');
+  }
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  // Give the logo a moment to load so it isn't missing from the printed page.
+  setTimeout(() => printWindow.print(), 500);
 }
 
 function triggerDownload(blob, filename) {

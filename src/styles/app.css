@@ -35,6 +35,12 @@ a:hover { text-decoration: underline; }
 
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 
+.demo-banner {
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: #201a08; text-align: center; font-size: 13px; font-weight: 600;
+  padding: 7px 12px;
+}
+
 .topbar {
   display: flex; align-items: center; gap: 16px;
   padding: 12px 20px;

@@ -1,5 +1,6 @@
 import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth, logout } from './lib/auth.js';
+import { IS_DEMO } from './lib/pb.js';
 import Login from './screens/Login.jsx';
 import Dashboard from './screens/Dashboard.jsx';
 import Customers from './screens/Customers.jsx';
@@ -16,6 +17,11 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {IS_DEMO && (
+        <div className="demo-banner">
+          Demo mode — sample data, held in memory only. Nothing is saved, and a refresh resets it.
+        </div>
+      )}
       <TopBar user={user} company={company} />
       <main className="page">
         <Routes>

@@ -28,13 +28,39 @@ original is preserved in `legacy/` — see [Legacy](#legacy).
 
 ```bash
 npm install
+npm run demo     # no backend, no login — sample data in memory
 npm run dev      # Vite on :5173, proxies /api to PocketBase on :8090
 npm run build
 npm test         # smoke test — totals, escaping, template invariants
+npm run seed:admin   # create the first company + owner login in PocketBase
 
 # PocketBase locally
 ./pocketbase serve --dir ./pocketbase/pb_data --hooksDir ./pocketbase/pb_hooks
 ```
+
+### Demo mode
+
+`npm run demo` (Vite `--mode demo`, which loads `.env.demo` → `VITE_DEMO=true`)
+swaps the PocketBase client for an in-memory stand-in in `src/lib/demoClient.js`
+and starts signed in. Everything above the `pb` seam is the real code — real
+screens, real template, real totals — so it is a genuine way to work on the UI
+without a server.
+
+Two things to keep true when touching it:
+
+- **It is dev-only by construction.** `IS_DEMO` in `src/lib/pb.js` is
+  `import.meta.env.DEV && VITE_DEMO === 'true'`, a compile-time constant, so the
+  demo client is tree-shaken out of production builds. `demoClient.js` also
+  throws if it is ever evaluated in a `PROD` build. Demo mode has **no
+  authentication at all** — it must never be reachable in a deployed app.
+- **`demoClient.js` mirrors the server hooks** (line totals, document totals,
+  numbering) so the UI doesn't appear broken offline. That is a deliberate
+  duplication for the demo only. If you change a rule in
+  `pocketbase/pb_hooks/main.pb.js`, change it here too — or the demo will quietly
+  disagree with production.
+
+In demo mode "Download PDF" opens the browser print dialog with the same HTML,
+since there is no Gotenberg.
 
 Full deployment runbook: [`deploy/README.md`](deploy/README.md).
 
@@ -43,7 +69,9 @@ Full deployment runbook: [`deploy/README.md`](deploy/README.md).
 ```
 src/
   lib/
-    pb.js          PocketBase client + error formatting
+    pb.js          PocketBase client (or the demo shim) + error formatting
+    demoClient.js  In-memory stand-in for PocketBase — dev only
+    demoData.js    Sample company, customers, estimates, invoice
     auth.js        useAuth hook, current company/user, roles
     money.js       VAT_RATE and computeTotals — THE money source of truth
     rates.js       Trade rates, category order, category options — ONE copy
@@ -64,6 +92,8 @@ pocketbase/
     pdf.pb.js      Authenticated Gotenberg proxy
 
 deploy/            docker-compose.yml + the OCI/Coolify runbook
+scripts/
+  seed-admin.mjs   Creates the first company + owner login
 legacy/            The original static app, kept for reference
 test/smoke.mjs     Dependency-free assertions on the calculation and template
 ```
