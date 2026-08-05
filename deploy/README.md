@@ -94,15 +94,29 @@ In the PocketBase admin UI: **Settings → Import collections**, paste
 > container logs a hook error on boot, check the version first — that is almost
 > always what it is.
 
-Then bootstrap your own company and user, in this order:
+Then create your first company and login. The script does both:
 
-1. **companies** → create one record with your details, bank details, VAT rate
-   (`0.2`), and logo URL.
-2. **users** → create your login, set `company` to that record and `role` to
-   `owner`.
+```bash
+PB_URL=https://api.yourdomain.co.uk \
+PB_SUPERUSER=you@example.com \
+PB_SUPERUSER_PASSWORD='...' \
+ADMIN_EMAIL=you@yourdomain.co.uk \
+ADMIN_PASSWORD="$(openssl rand -base64 18)" \
+npm run seed:admin
+```
 
-Everything else keys off those two rows. The API rules scope every query to
-`@request.auth.company`, so a user without a company sees nothing.
+It prints the password once — save it to a password manager there and then.
+
+Against a **remote** server the script refuses well-known passwords like
+`admin123`. That is not bureaucracy: this login opens every customer address and
+phone number you hold, on a box with a public IP, and a "temporary" default
+password has a way of still being there a year later. On `localhost` it allows
+them, because nothing is at stake.
+
+You can of course do this by hand in the Admin UI instead — create a
+**companies** record, then a **users** record with `company` set to it and `role`
+set to `owner`. Everything keys off those two rows; the API rules scope every
+query to `@request.auth.company`, so a user without a company sees nothing.
 
 ---
 
@@ -153,6 +167,20 @@ on that one disk.
 - [ ] A backup has been taken **and restored** somewhere
 
 ---
+
+## Just want to look at it first?
+
+You don't need any of the above to see the app running:
+
+```bash
+npm install
+npm run demo
+```
+
+That starts on `http://localhost:5173` already signed in, with sample customers,
+estimates across the pipeline, and a paid deposit invoice. No PocketBase, no VM,
+no login. It is dev-only and holds everything in memory — a refresh resets it,
+and it cannot be built for production.
 
 ## Local development
 
